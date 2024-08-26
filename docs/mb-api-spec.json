@@ -1,0 +1,304 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Message Board API",
+    "version": "1.0.1"
+  },
+  "servers": [
+    {
+      "url": "http://10.21.75.147:3004/v1",
+      "description": "Message Board API Dev Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "message": {
+        "type": "object",
+        "description": "A message",
+        "required": [
+          "name",
+          "msgText"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 15,
+            "pattern": "^[A-Za-z0-9_]+$",
+            "description": "Name of User who created the message.",
+            "example": "Fred"
+          },
+          "msgText": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 30,
+            "description": "A message's text.",
+            "example": "Hello World!"
+          }
+        }
+      },
+      "messageWithId": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/message"
+          },
+          {
+            "type": "object",
+            "description": "A message with id",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "number",
+                "description": "message's id.",
+                "example": 1
+              }
+            }
+          }
+        ]
+      },
+      "user": {
+        "type": "object",
+        "description": "A user",
+        "required": [
+          "email",
+          "username",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-za-z0-9.-]+\\.[A-Za-z]{2,}+$",
+            "description": "Registered user's email.",
+            "example": "j.guenter@protonmail.com"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 15,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "description": "Registered user's login name.",
+            "example": "preludeincminor"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8,
+            "maxLength": 64,
+            "description": "Registered user's password.",
+            "example": "notverysecurepassword"
+          }
+        }
+      },
+      "userWithId": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/user"
+          },
+          {
+            "type": "object",
+            "description": "A user with id",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "number",
+                "description": "User's id.",
+                "example": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "responses": {
+      "429TooManyRequests": {
+        "description": "Too many requests."
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/messages": {
+      "description": "All the messages",
+      "get": {
+        "summary": "List all the messages",
+        "operationId": "getAllMessages",
+        "description": "List all the messages in the order they were posted (newest at the top.)",
+        "responses": {
+          "200": {
+            "description": "All the messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/messageWithId"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/429TooManyRequests"
+          }
+        }
+      },
+      "post": {
+        "summary": "Adds new message",
+        "operationId": "postNewMessage",
+        "description": "Posts new message at the top of other messages",
+        "requestBody": {
+          "description": "Message's data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/message"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Adds new message, sends 201 Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/messageWithId"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. The message in the body of the Request is either missing or malformed."
+          },
+          "429": {
+            "$ref": "#/components/responses/429TooManyRequests"
+          }
+        }
+      }
+    },
+    "/users": {
+      "description": "All the users",
+      "post": {
+        "summary": "Adds new user",
+        "operationId": "registerNewUser",
+        "description": "Posts new message at the top of other messages",
+        "requestBody": {
+          "description": "User's data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Adds new user, sends 201 Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/userWithId"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. The message in the body of the Request is either missing or malformed."
+          },
+          "403": {
+            "description": "Username or email already exists."
+          },
+          "429": {
+            "$ref": "#/components/responses/429TooManyRequests"
+          }
+        }
+      }
+    },
+    "/login": {
+      "description": "Gets user's credentials and issues authorization token",
+      "post": {
+        "summary": "Allows user to login using JWT",
+        "operationId": "logInUser",
+        "description": "User login access",
+        "requestBody": {
+          "description": "User's data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "User's login name",
+                    "example": "preludeincminor"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "maxLength": 64,
+                    "description": "User's password, used to secure login token.",
+                    "example": "notverysecurepassword"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully logged in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "JWT Token",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing data. Missing username and/or email."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/429TooManyRequests"
+          }
+        }
+      }
+    }
+  }
+}
