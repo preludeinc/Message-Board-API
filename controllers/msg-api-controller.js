@@ -16,10 +16,9 @@ const getAllMessages = async (req, res) => {
 // POST Request Handler
 const addNewMessage = async (req, res) => {
   try {
-
     // adds message
-    // responds with '201 Created' Status Code and the message, as JSON,
-    // in the body of the response
+    // responds with '201 Created' Status Code and the message, 
+    // as JSON, in the body of the response
     let message = await messageModel.create(req.body);
     res.status(201).json(message);
   } catch (err) {
